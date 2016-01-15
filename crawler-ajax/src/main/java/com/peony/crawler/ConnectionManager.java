@@ -19,13 +19,14 @@ import com.peony.util.base.Singleton;
 @Singleton
 public class ConnectionManager {
 
+	private static ConnectionManager connManager = null;
+
 	private static ComboPooledDataSource dataSource;
 
 	/**
 	 * 日志管理对象
 	 */
-	private static final Logger LOGGER = LoggerFactory
-			.getLogger(ConnectionManager.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
 
 	/**
 	 * 数据库连接池配置文件名常量
@@ -62,6 +63,14 @@ public class ConnectionManager {
 	 */
 	private static final int DEFAULT_MAXWAIT_TIME = 5000;
 
+	public static ConnectionManager getInstance() {
+		if (connManager == null) {
+			connManager = new ConnectionManager();
+			return connManager;
+		}
+		return connManager;
+	}
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -74,11 +83,10 @@ public class ConnectionManager {
 			dataSource.setJdbcUrl(prop.getProperty(URL_PROP));
 			dataSource.setUser(prop.getProperty(USERNAME_PROP));
 			dataSource.setPassword(prop.getProperty(PASSWORD_PROP));
-			dataSource.setCheckoutTimeout(StringUtils.parseInt(
-					prop.getProperty(MAXWAIT_PROP), DEFAULT_MAXWAIT_TIME));
+			dataSource.setCheckoutTimeout(StringUtils.parseInt(prop.getProperty(MAXWAIT_PROP), DEFAULT_MAXWAIT_TIME));
 			dataSource.setMaxPoolSize(30);
 			dataSource.setInitialPoolSize(10);
-		
+
 			testConnection(dataSource);
 			LOGGER.info("初始化数据库连接池成功！");
 		} catch (IOException e) {
@@ -110,8 +118,7 @@ public class ConnectionManager {
 	/**
 	 * 测试数据库连接池
 	 */
-	private static void testConnection(ComboPooledDataSource dataSource)
-			throws ServerInitException {
+	private static void testConnection(ComboPooledDataSource dataSource) throws ServerInitException {
 		try {
 			Connection connection = dataSource.getConnection();
 			connection.close();

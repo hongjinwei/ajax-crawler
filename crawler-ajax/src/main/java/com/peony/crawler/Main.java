@@ -12,6 +12,7 @@ import com.peony.crawler.kankancity.KankanCrawlerTaskService;
 import com.peony.crawler.model.CrawlerTaskService;
 import com.peony.crawler.model.ServerInitException;
 import com.peony.crawler.toutiao.ToutiaoCrawlerTaskService;
+import com.peony.crawler.wangyinews.WangyiCrawlerTaskService;
 import com.peony.util.base.New;
 
 public class Main {
@@ -38,8 +39,8 @@ public class Main {
 	}
 
 	static {
-		// taskService.add(new WangyiCrawlerTaskService());
-		// taskService.add(new ToutiaoCrawlerTaskService());
+		taskService.add(new WangyiCrawlerTaskService());
+		taskService.add(new ToutiaoCrawlerTaskService());
 		taskService.add(new KankanCrawlerTaskService());
 	}
 

@@ -42,6 +42,20 @@ public class ToutiaoCrawlerTask implements CrawlerTask {
 		return url;
 	}
 
+	private String handleSahreUrl(String url) {
+		StringBuilder sb = new StringBuilder();
+		int i = 0;
+		while (i < url.length()) {
+			if (url.charAt(i) != '?') {
+				sb.append(url.charAt(i));
+			} else {
+				break;
+			}
+			i++;
+		}
+		return sb.toString();
+	}
+
 	public void craw(String url, List<ParseResult> results) {
 		String data = null;
 		try {
@@ -68,7 +82,9 @@ public class ToutiaoCrawlerTask implements CrawlerTask {
 				JSONObject item = array.getJSONObject(i);
 				title = item.getString("title");
 				publish_date = new Timestamp(item.getLong("publish_time") * 1000);
-				pageUrl = item.getString("article_url");
+				String shareUrl = item.getString("share_url");
+				pageUrl = handleSahreUrl(shareUrl);
+				System.out.println(pageUrl);
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage() + "页面解析失败！", e);
 				continue;
@@ -109,56 +125,56 @@ public class ToutiaoCrawlerTask implements CrawlerTask {
 		}
 	}
 
-	private void trySaveParseResults(List<ParseResult> list) {
-		LOGGER.info("开始保存");
-		CacheClient session = CommonUtils.getCacheClient();
-		LOGGER.info("获取mina成功");
-		int count = 0;
-		try {
-			for (int i = 0; i < list.size(); i++) {
-				ParseResult result = list.get(i);
-				try {
-					if (!CommonUtils.checkUrl(session, result.getPage().getUrl())) {
-						WebPage page = result.getPage();
-						String content = result.getContent();
-
-						// 保存文章到HBase文档服务器
-						try {
-							if (SystemProps.storeable()) {
-								CommonUtils.storage(true, page.getId(), content, false);
-							}
-						} catch (Exception e) {
-							LOGGER.error(e.getMessage() + "保存至文档服务器失败！");
-							continue;
-						}
-
-						// 保存页面到sql数据库
-						// WebPageRepository.save(page);
-
-						try {
-							WebPageManager.getInstance().savePage(page);
-						} catch (SQLException e) {
-							LOGGER.error(e.getMessage(), e);
-							continue;
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							LOGGER.error(e.getMessage(), e);
-							continue;
-						}
-
-						// 保存contentUrl，即AJAX的JSON数据的URL
-						CommonUtils.storeUrl(session, page.getUrl());
-						count++;
-					}
-				} catch (Exception e) {
-					LOGGER.error(e.getMessage(), e);
-				}
-			}
-		} finally {
-			LOGGER.info("存放爬取结果" + count + "条");
-			CommonUtils.recycleCacheClient(session);
-		}
-	}
+	// private void trySaveParseResults(List<ParseResult> list) {
+	// LOGGER.info("开始保存");
+	// CacheClient session = CommonUtils.getCacheClient();
+	// LOGGER.info("获取mina成功");
+	// int count = 0;
+	// try {
+	// for (int i = 0; i < list.size(); i++) {
+	// ParseResult result = list.get(i);
+	// try {
+	// if (!CommonUtils.checkUrl(session, result.getPage().getUrl())) {
+	// WebPage page = result.getPage();
+	// String content = result.getContent();
+	//
+	// // 保存文章到HBase文档服务器
+	// try {
+	// if (SystemProps.storeable()) {
+	// CommonUtils.storage(true, page.getId(), content, false);
+	// }
+	// } catch (Exception e) {
+	// LOGGER.error(e.getMessage() + "保存至文档服务器失败！");
+	// continue;
+	// }
+	//
+	// // 保存页面到sql数据库
+	// // WebPageRepository.save(page);
+	//
+	// try {
+	// WebPageManager.getInstance().savePage(page);
+	// } catch (SQLException e) {
+	// LOGGER.error(e.getMessage(), e);
+	// continue;
+	// } catch (Exception e) {
+	// // TODO Auto-generated catch block
+	// LOGGER.error(e.getMessage(), e);
+	// continue;
+	// }
+	//
+	// // 保存contentUrl，即AJAX的JSON数据的URL
+	// CommonUtils.storeUrl(session, page.getUrl());
+	// count++;
+	// }
+	// } catch (Exception e) {
+	// LOGGER.error(e.getMessage(), e);
+	// }
+	// }
+	// } finally {
+	// LOGGER.info("存放爬取结果" + count + "条");
+	// CommonUtils.recycleCacheClient(session);
+	// }
+	// }
 
 	@Override
 	public void run() {
@@ -174,7 +190,7 @@ public class ToutiaoCrawlerTask implements CrawlerTask {
 			} finally {
 				try {
 					LOGGER.info("开始保存爬取结果 category:" + category);
-					trySaveParseResults(list);
+					CommonUtils.trySaveParseResults(list, "今日头条 ");
 					LOGGER.info("保存板块" + category + "结束 ");
 				} catch (Exception e) {
 					LOGGER.error(e.getMessage() + "存放今日头条" + category + "板块时出现错误", e);
